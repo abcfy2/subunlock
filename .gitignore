@@ -1,0 +1,26 @@
+# 点开头的本地文件/目录全部忽略(.venv/.ruff_cache/.basedpyright 等)
+.*
+!.gitignore
+!.gitattributes
+!.editorconfig
+!.github
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+
+# uv / 打包
+dist/
+build/
+*.egg-info/
+
+# 提取结果含节点凭证与账号信息, 禁止提交
+subscription.yaml
+maomao.yaml
+猫猫云订阅.yaml
+decrypted*.yaml
+
+# 本地环境
+.env

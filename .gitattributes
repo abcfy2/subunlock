@@ -1,0 +1,18 @@
+# 所有文本文件统一 UNIX 换行符
+* text=auto eol=lf
+
+# 显式标记文本类型
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# 二进制
+*.png binary
+*.gz binary
+*.whl binary
