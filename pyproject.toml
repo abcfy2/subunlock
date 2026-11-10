@@ -1,18 +1,18 @@
 [project]
 name = "subunlock"
 version = "0.1.0"
-description = "从机场魔改客户端提取标准 Clash 订阅"
+description = "Extract standard Clash subscriptions from modified proxy clients"
 requires-python = ">=3.12"
 dependencies = [
-    "pyyaml>=6.0.2",
-    "cryptography>=44.0",
+    "pyyaml>=6.0.3",
+    "cryptography>=50.0.2",
 ]
 
 [project.scripts]
 subunlock = "subunlock.cli:main"
 
 [dependency-groups]
-dev = ["ruff>=0.14", "basedpyright>=1.29"]
+dev = ["ruff>=0.17.4", "basedpyright>=1.40.2"]
 
 [build-system]
 requires = ["hatchling"]
@@ -30,7 +30,7 @@ src = ["src", "."]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-# Provider.configure_args 是可选的空实现(默认无参数), B027 不适用
+# Provider.configure_args is an optional no-op (no args by default); B027 does not apply.
 "src/subunlock/base.py" = ["B027"]
 
 [tool.basedpyright]

@@ -275,12 +275,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cryptography", specifier = ">=44.0" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "cryptography", specifier = ">=50.0.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "basedpyright", specifier = ">=1.29" },
-    { name = "ruff", specifier = ">=0.14" },
+    { name = "basedpyright", specifier = ">=1.40.2" },
+    { name = "ruff", specifier = ">=0.17.4" },
 ]
