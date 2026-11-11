@@ -1,45 +1,48 @@
-import argparse
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
 from typing import Any, ClassVar
+
+from pydantic import BaseModel
 
 SUBSCRIPTION_KEYS = ("proxies", "proxy-groups", "rules", "dns", "hosts")
 
 
 class ProviderError(RuntimeError):
-    """provider 运行时错误(网络/面板/解密失败), REST 侧对应 5xx."""
+    """provider 运行时错误(网络/面板/解密失败), REST 侧对应 502, CLI 以 1 退出."""
 
 
 class ProviderArgumentError(ProviderError):
-    """必选参数缺失或非法, REST 侧对应 400; CLI 打印 usage 后以 2 退出."""
+    """fetch() 运行期参数问题(如登录流程中 token 缺失), REST 侧对应 400, CLI 以 2 退出.
+
+    声明期参数校验(必填/二选一/格式)由 Provider.params_model 的 pydantic 模型
+    承担, 不走这里.
+    """
 
 
 class Provider(ABC):
     """订阅提取器抽象: 从机场魔改客户端还原标准 Clash 订阅配置.
 
     子类职责:
-    - name/summary: 注册名与 --help 展示的一行说明
-    - configure_args(): 声明本 provider 的专属 CLI 参数
-    - create(): 从键值映射(命令行 vars(args) / REST query 字典)构造实例
+    - name/summary: 注册名与帮助展示的一行说明
+    - params_model: pydantic 参数模型, 参数契约的唯一声明处; CLI 据此生成
+      argparse 选项与帮助, REST 据此生成路由参数与 OpenAPI schema
+    - create(): 由校验后的参数模型实例构造 provider 实例
     - fetch(): 执行提取, 返回完整配置 dict
-    传输层(CLI/REST)只负责收集参数字典, provider 契约与传输方式无关.
+    传输层(cli.py/server.py)只负责收集原始参数并调用 params_model 校验,
+    provider 契约与传输方式无关.
     """
 
     name: ClassVar[str]
     summary: ClassVar[str] = ""
-
-    @classmethod
-    def configure_args(cls, parser: argparse.ArgumentParser) -> None:
-        """注册 provider 专属参数, 默认无."""
+    params_model: ClassVar[type[BaseModel]]
 
     @classmethod
     @abstractmethod
-    def create(cls, params: Mapping[str, Any]) -> "Provider":
-        """从参数字典构造 provider 实例, 未知键应被忽略."""
+    def create(cls, params: BaseModel) -> "Provider":
+        """由校验后的参数模型实例构造 provider, 实现中窄化为具体 Params 类型."""
 
     @abstractmethod
     def fetch(self) -> dict[str, Any]:
-        """执行提取, 返回完整配置 dict, 交由 CLI 裁剪为订阅格式."""
+        """执行提取, 返回完整配置 dict, 交由传输层裁剪为订阅格式."""
 
 
 def to_subscription(config: dict[str, Any]) -> dict[str, Any]:
