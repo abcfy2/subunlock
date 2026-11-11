@@ -10,7 +10,13 @@ tradeoff: CF 上无线程, sync 端点在事件循环上内联执行, fetch_payl
 Vercel 端 sync def 走 anyio 线程池无此问题。
 """
 
-from workers import asgi  # pyright: ignore[reportMissingImports] - 仅存在于 CF runtime-sdk 环境
+from workers import asgi  # noqa: I001 - workers 必须最先 import(entropy 补丁铁律); pyright: ignore[reportMissingImports] - 仅存在于 CF runtime-sdk 环境
+
+# 先执行被 entropy 补丁注册的模块(rust_package_context), 打开 Rust 包首次
+# import 的 getentropy 白名单; 否则 cryptography._rust 在 ciphers 导入期
+# 触发 entropy 调用会被 workerd 拒绝(worker 起动期 wasm panic)。本地
+# CPython 上此 import 为普通操作, 无副作用。
+import cryptography.exceptions  # noqa: F401
 
 from subunlock.server import app
 

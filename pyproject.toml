@@ -22,7 +22,14 @@ server = [
 ]
 
 [dependency-groups]
-dev = ["ruff>=0.17.4", "basedpyright>=1.40.2", "fastapi>=0.162.2", "fastapi-cli>=0.0.32"]
+dev = [
+    "ruff>=0.17.4",
+    "basedpyright>=1.40.2",
+    "fastapi>=0.162.2",
+    "fastapi-cli>=0.0.32",
+    "workers-py",
+    "workers-runtime-sdk",
+]
 
 [build-system]
 requires = ["hatchling"]

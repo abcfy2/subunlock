@@ -60,17 +60,11 @@ http://127.0.0.1:8000/maomaoyun?user=<email>&password=<pw>
 ## 部署 Cloudflare Workers
 
 ```bash
-uv run pywrangler deploy      # 需 workers-py + wrangler(经 npx 自动拉取)
+uv run pywrangler deploy      # 首次运行会引导登录
 ```
 
-- 配置已就绪: `wrangler.jsonc`(main=`src/worker.py`, `python_workers` flag)
-- 仅 `npx -y wrangler deploy` 不够: 它只上传源码模块, 不打包 PyPI 依赖,
-  远端校验会报 `No module named 'workers'`(实测); 依赖打包由 pywrangler 完成
-- 出网说明: Workers 上 stdlib socket 的 TLS 不可用, 传输层已换 httpx
-  (Cloudflare 上游适配过 JS Fetch 通道), 本地/Vercel/Workers 行为一致
-- Windows 注意: pywrangler 的依赖打包链在 Windows 有已知问题(实测),
-  建议 WSL2 或 CI 部署(仓库提供 `CLOUDFLARE_API_TOKEN` 时可在 CI 完成)
-- 注意端点无鉴权, 部署到 `*.workers.dev` 后即公网可达(见上方安全提示)
+配置与依赖见 `wrangler.jsonc` 与 `pyproject.toml`, 打包由 pywrangler 自动完成。
+注意端点无鉴权, 部署后即公网可达(见上方安全提示)。
 
 ## 本地开发
 
