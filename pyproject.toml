@@ -8,6 +8,7 @@ dependencies = [
     # Floor must stay satisfiable by Pyodide's bundled cryptography (47.0.0)
     # for Cloudflare Python Workers; uv.lock keeps latest (50.0.2) locally.
     "cryptography>=47.0.0",
+    "httpx>=0.28",
     "pydantic>=2.14.3",
 ]
 

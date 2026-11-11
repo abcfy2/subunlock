@@ -1,5 +1,4 @@
 from typing import Any
-from urllib.error import HTTPError, URLError
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
 
@@ -58,5 +57,5 @@ class MaomaoYunProvider(Provider):
                 self.subscribe_token = api.login(self.user, self.password).subscribe_token
             raw = api.fetch_payload(self.subscribe_token)
             return parse_config(decrypt_payload(raw, DEFAULT_AES_KEY))
-        except (PanelError, HTTPError, URLError) as e:
+        except PanelError as e:
             raise ProviderError(str(e)) from e
