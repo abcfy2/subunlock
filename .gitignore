@@ -25,3 +25,4 @@ build/
 .wrangler/
 python_modules/
 pylock.toml
+.env*

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import time
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -9,6 +10,7 @@ from .base import ProviderArgumentError, ProviderError, to_subscription
 
 _RESERVED_SUBCOMMANDS = {"serve"}
 _COMMON_HELP = "保留完整配置(默认剥离运行时键, 只留订阅四要素)"
+_INFO_HELP = "打印订阅摘要(流量/到期/节点数)"
 
 
 def _add_provider_args(parser: argparse.ArgumentParser, params_model: type[BaseModel]) -> None:
@@ -25,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--output", help="输出文件(缺省打印到终端)")
     parser.add_argument("--full", action="store_true", help=_COMMON_HELP)
+    parser.add_argument("--info", action="store_true", help=_INFO_HELP)
     provider_names = ", ".join(sorted(PROVIDERS))
     sub = parser.add_subparsers(
         dest="command",
@@ -42,7 +45,44 @@ def build_parser() -> argparse.ArgumentParser:
         _add_provider_args(sp, cls.params_model)
         sp.add_argument("--output", help="输出文件(缺省打印到终端)")
         sp.add_argument("--full", action="store_true", help=_COMMON_HELP)
+        sp.add_argument("--info", action="store_true", help=_INFO_HELP)
     return parser
+
+
+def _human_size(n: float) -> str:
+    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+        if abs(n) < 1024:
+            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} PiB"
+
+
+def _print_userinfo(userinfo: str | None) -> None:
+    """解析上游 subscription-userinfo 头, 打印流量与到期摘要."""
+    kv: dict[str, str] = {}
+    for part in (userinfo or "").split(";"):
+        key, _, value = part.strip().partition("=")
+        if key:
+            kv[key] = value
+
+    def _int(field: str) -> int | None:
+        raw = kv.get(field, "")
+        return int(raw) if raw.isdigit() else None
+
+    used = sum(v for v in (_int("upload"), _int("download")) if v is not None)
+    total = _int("total")
+    if used and total:
+        print(f"流量: 已用 {_human_size(used)} / {_human_size(total)}"
+              f"(剩 {(total - used) / total:.0%})")
+    elif used:
+        print(f"流量: 已用 {_human_size(used)}")
+    else:
+        print("流量: 上游未提供")
+    expire = _int("expire")
+    if expire:
+        days = (expire - int(time.time())) // 86400
+        when = time.strftime("%Y-%m-%d", time.localtime(expire))
+        print(f"到期: {when}({max(0, days)} 天后)" if days > 0 else f"到期: {when}(已过期)")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -83,12 +123,18 @@ def main(argv: list[str] | None = None) -> int:
     proxies = len(data.get("proxies") or [])
     groups = len(data.get("proxy-groups") or [])
     rules = len(data.get("rules") or [])
-    if args.output:
-        with open(args.output, "w", encoding="utf-8") as f:
-            f.write(text)
-        print(f"OK: {proxies} 节点, {groups} 策略组, {rules} 规则 -> {args.output}")
-    else:
-        sys.stdout.write(text)
+    summary = f"{proxies} 节点, {groups} 策略组, {rules} 规则"
+    if args.info or args.output:
+        if args.info:
+            _print_userinfo(provider.subscription_userinfo)
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(text)
+            print(f"OK: {summary} -> {args.output}")
+        else:
+            print(f"OK: {summary}")
+        return 0
+    sys.stdout.write(text)
     return 0
 
 

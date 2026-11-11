@@ -25,6 +25,9 @@ uv run subunlock maomaoyun --user <email> --password <pw> --output maomao.yaml
 
 # 保留完整配置(默认剥离 port/external-controller/allow-lan 等运行时键)
 uv run subunlock maomaoyun --subscribe-token <32hex> --full --output maomao.yaml
+
+# 打印订阅摘要(流量/到期/节点数), 不输出配置; 与 --output 叠加时附加打印
+uv run subunlock maomaoyun --subscribe-token <32hex> --info
 ```
 
 输出为标准 mihomo YAML, 可直接导入 Clash Verge / FlClash / ShellCrash。
