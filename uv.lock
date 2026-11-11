@@ -871,6 +871,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -878,7 +879,6 @@ dependencies = [
 
 [package.optional-dependencies]
 server = [
-    { name = "fastapi" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -895,7 +895,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=47.0.0" },
-    { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.162.2" },
+    { name = "fastapi", specifier = ">=0.162.2" },
     { name = "httpx", specifier = ">=0.28" },
     { name = "pydantic", specifier = ">=2.14.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },
