@@ -24,3 +24,5 @@ decrypted*.yaml
 
 # 本地环境
 .env
+
+.vercel
