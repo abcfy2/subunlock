@@ -39,7 +39,7 @@ def decrypt_payload(raw: bytes, key: bytes = DEFAULT_AES_KEY) -> str:
 
 
 def parse_config(text: str) -> dict[str, Any]:
-    cfg = yaml.safe_load(text)
+    cfg = yaml.load(text, Loader=getattr(yaml, "CSafeLoader", yaml.SafeLoader))
     if not isinstance(cfg, dict):
         raise ValueError('解密结果不是 YAML dict')
     return cfg
