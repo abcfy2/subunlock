@@ -66,8 +66,8 @@ def get_subscribe(auth_data: str) -> dict[str, Any]:
     return payload["data"]
 
 
-def fetch_payload(subscribe_token: str, retries: int = 7) -> bytes:
-    """拉取 v100 加密订阅并 base64 解码, 返回 AES 密文字节.
+def fetch_payload(subscribe_token: str, retries: int = 7) -> tuple[bytes, str | None]:
+    """拉取 v100 加密订阅, 返回 (base64 解码后的 AES 密文, subscription-userinfo 头).
 
     面板 CDN 偶发瞬时 404/5xx, 采用多 UA 轮换 + 指数退避重试.
     """
@@ -81,6 +81,7 @@ def fetch_payload(subscribe_token: str, retries: int = 7) -> bytes:
     )
     body = b""
     last_err: Exception | None = None
+    userinfo: str | None = None
     with httpx.Client(timeout=20, follow_redirects=True) as client:
         for attempt in range(retries):
             try:
@@ -94,6 +95,7 @@ def fetch_payload(subscribe_token: str, retries: int = 7) -> bytes:
                 continue
             if resp.is_success:
                 body = resp.content
+                userinfo = resp.headers.get("subscription-userinfo")
                 break
             # 面板 CDN 偶发瞬时 403/404/5xx; 其余状态码直接失败。
             last_err = PanelError(f"{url} HTTP {resp.status_code}")
@@ -103,4 +105,4 @@ def fetch_payload(subscribe_token: str, retries: int = 7) -> bytes:
     if not body:
         # 200 但空 body 视为失败(原 curl 子进程兜底是准死代码, 已删)。
         raise PanelError(f"订阅端点持续不可用: {last_err}")
-    return base64.b64decode(body)
+    return base64.b64decode(body), userinfo

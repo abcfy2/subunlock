@@ -55,7 +55,7 @@ class MaomaoYunProvider(Provider):
             if not self.subscribe_token:
                 assert self.user and self.password  # MaomaoYunParams 已校验二选一
                 self.subscribe_token = api.login(self.user, self.password).subscribe_token
-            raw = api.fetch_payload(self.subscribe_token)
+            raw, self.subscription_userinfo = api.fetch_payload(self.subscribe_token)
             return parse_config(decrypt_payload(raw, DEFAULT_AES_KEY))
         except PanelError as e:
             raise ProviderError(str(e)) from e

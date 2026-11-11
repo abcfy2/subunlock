@@ -34,6 +34,9 @@ class Provider(ABC):
     name: ClassVar[str]
     summary: ClassVar[str] = ""
     params_model: ClassVar[type[BaseModel]]
+    # fetch() 期间捕获的上游 subscription-userinfo 头(流量/到期), 传输层透传给
+    # Clash 客户端; CLI 忽略, REST 转为响应头. 无法提供时保持 None.
+    subscription_userinfo: str | None = None
 
     @classmethod
     @abstractmethod

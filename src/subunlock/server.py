@@ -39,7 +39,12 @@ def _make_endpoint(provider_cls: type[Provider]) -> Callable[..., Response]:
             raise HTTPException(status_code=400, detail=str(e)) from e
         except ProviderError as e:
             raise HTTPException(status_code=502, detail=str(e)) from e
-        return Response(content=_dump_yaml(data), media_type="text/yaml")
+        headers = (
+            {"subscription-userinfo": provider.subscription_userinfo}
+            if provider.subscription_userinfo
+            else None
+        )
+        return Response(content=_dump_yaml(data), media_type="text/yaml", headers=headers)
 
     # 运行时注入动态参数模型, FastAPI 据此生成 Query 校验与 OpenAPI schema
     extract.__annotations__["params"] = Annotated[params_model, Query()]
