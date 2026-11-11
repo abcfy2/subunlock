@@ -71,6 +71,7 @@ uv run pywrangler deploy      # 首次运行会引导登录
 ```bash
 uv run fastapi dev                             # 热重载([tool.fastapi] entrypoint 已配置)
 uv run uvicorn subunlock.server:app --reload   # 等价, 显式 import string
+uv run pywrangler dev                          # Workers 同运行时本地验证(workerd, :8787)
 uv run main.py --help                          # 等价于 uv run subunlock --help
 ```
 
