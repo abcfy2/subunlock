@@ -29,4 +29,5 @@ decrypted*.yaml
 
 .venv-workers/
 .wrangler/
+python_modules/
 pylock.toml
