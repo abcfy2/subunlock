@@ -48,12 +48,6 @@ entrypoint = "subunlock.server:app"
 # check); relative imports inside resolve via the src namespace package.
 entrypoint = "src.subunlock.server:app"
 
-# Vercel's default install runs `uv sync --no-dev`, which skips extras.
-# Override it to install the server extra (fastapi) so the REST entrypoint
-# loads; flags mirror the runtime default minus --no-dev.
-[tool.vercel.scripts]
-install = "uv sync --frozen --extra server --no-editable"
-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
