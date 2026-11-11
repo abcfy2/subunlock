@@ -9,8 +9,8 @@ dependencies = [
     # for Cloudflare Python Workers; uv.lock keeps latest (50.0.2) locally.
     "cryptography>=47.0.0",
     "httpx>=0.28",
-    # pywrangler 只打包 core dependencies(server extra 不进 CF bundle),
-    # Workers 部署需要 FastAPI, 故放 core(官方文档同款做法)。
+    # pywrangler bundles only core dependencies + dev group (extras are not
+    # included in the CF bundle), so FastAPI must be a core dependency here.
     "fastapi>=0.162.2",
     "pydantic>=2.14.3",
 ]
