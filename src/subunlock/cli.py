@@ -37,6 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve = sub.add_parser("serve", help="启动 REST 服务, 暴露全部 provider")
     serve.add_argument("--host", default="127.0.0.1", help="监听地址(默认 127.0.0.1)")
     serve.add_argument("--port", type=int, default=8000, help="监听端口(默认 8000)")
+    serve.add_argument("--reload", action="store_true", help="热重载(开发用)")
     for name, cls in sorted(PROVIDERS.items()):
         if name in _RESERVED_SUBCOMMANDS:
             raise SystemExit(f"provider 名与保留子命令冲突: {name}")
@@ -54,6 +55,22 @@ def _human_size(n: float) -> str:
             return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
         n /= 1024
     return f"{n:.1f} PiB"
+
+
+def _format_error_loc(loc: tuple[int | str, ...]) -> str:
+    """ValidationError.loc 转可读点路径; 模型级错误(空 loc)显示 (model)."""
+    return ".".join(str(part) for part in loc) if loc else "(model)"
+
+
+def _mask_extra(token: str) -> str:
+    """未识别参数的回显掩码: 保留 flag 名, 值一律 ****.
+    内联形式(--flag=value)整体是单 token: 未注册选项不拆 "=",
+    必须在 "-" 前缀分支里再按 "=" 拆, 否则值会原样回显."""
+    if not token.startswith("-"):
+        return "****"
+    if "=" in token:
+        return token.split("=", 1)[0] + "=****"
+    return token
 
 
 def _print_userinfo(userinfo: str | None) -> None:
@@ -86,7 +103,13 @@ def _print_userinfo(userinfo: str | None) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args, extras = parser.parse_known_args(argv)
+    if extras:
+        # argparse 默认把打错的 flag 连同值逐字回显到 stderr; 值统一掩码
+        masked = " ".join(_mask_extra(t) for t in extras)
+        parser.print_usage(sys.stderr)
+        print(f"{parser.prog}: 未识别参数: {masked}", file=sys.stderr)
+        return 2
     if args.command == "serve":
         # 延迟导入: 仅 CLI 安装(无 server 依赖组)时仍可用提取功能
         try:
@@ -97,14 +120,19 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        return serve_main(host=args.host, port=args.port)
+        return serve_main(host=args.host, port=args.port, reload=args.reload)
     provider_cls = PROVIDERS[args.command]
     raw = {k: v for k, v in vars(args).items() if k in provider_cls.params_model.model_fields}
     try:
         params = provider_cls.params_model(**raw)
     except ValidationError as e:
         parser.print_usage(sys.stderr)
-        print(f"{parser.prog} {args.command}: 参数错误:\n{e}", file=sys.stderr)
+        # str(e) 含 input_value 原始值, 会把密码/token 带进 stderr; 只打 loc+msg
+        details = "\n".join(
+            f"  {_format_error_loc(err['loc'])}: {err['msg']}"
+            for err in e.errors(include_input=False, include_url=False)
+        )
+        print(f"{parser.prog} {args.command}: 参数错误:\n{details}", file=sys.stderr)
         return 2
     try:
         sub = extract_subscription(provider_cls, params, full=args.full)

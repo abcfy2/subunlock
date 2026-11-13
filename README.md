@@ -55,8 +55,8 @@ http://127.0.0.1:8000/maomaoyun?user=<email>&password=<pw>
 配置开启 Workers Cache(`cache.enabled`)后同样生效。错误响应(422/400/404/
 502)统一 `no-store`, 不会被缓存。
 
-> 安全提示: token/密码随 URL 明文出现(uvicorn 日志、Clash 配置、浏览器历史),
-> 端点无鉴权, 仅限个人本机/LAN 使用, 请勿暴露公网。
+> 安全提示: 端点无鉴权, 仅限个人本机/LAN 使用, 请勿暴露公网。
+> 订阅 URL 自身携带凭证, 会留存于 Clash 配置与浏览器历史。
 
 仅供个人已购服务使用, 请勿分发提取结果。
 
@@ -77,8 +77,8 @@ uv run pywrangler deploy      # 首次运行会引导登录
 ## 本地开发
 
 ```bash
-uv run fastapi dev                             # 热重载([tool.fastapi] entrypoint 已配置)
-uv run uvicorn subunlock.server:app --reload   # 等价, 显式 import string
+uv run subunlock serve                         # 推荐: access 日志已去 query(凭证不落日志)
+uv run subunlock serve --reload                # 开发热重载, 同样带脱敏日志配置
 uv run pywrangler dev                          # Workers 同运行时本地验证(workerd, :8787)
 uv run main.py --help                          # 等价于 uv run subunlock --help
 ```

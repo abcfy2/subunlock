@@ -51,7 +51,13 @@ def _send(
     try:
         return client.request(method, url, headers=headers, content=content)
     except httpx.HTTPError as e:
-        raise PanelError(f"{url} 请求失败: {e}") from e
+        raise PanelError(f"{_redact(url)} 请求失败: {e}") from e
+
+
+def _redact(url: str) -> str:
+    """错误消息里的 URL 去掉 query: 订阅端点的 token 在 query 中,
+    凭证永不进入异常消息(否则会随 502 detail / CLI stderr 落地)."""
+    return url.split("?", 1)[0]
 
 
 def login(email: str, password: str) -> str:
@@ -98,7 +104,7 @@ def fetch_payload(subscribe_token: str) -> tuple[bytes, str | None]:
                 body = resp.content
                 userinfo = resp.headers.get("subscription-userinfo")
                 break
-            last_err = PanelError(f"{url} HTTP {resp.status_code}")
+            last_err = PanelError(f"{_redact(url)} HTTP {resp.status_code}")
             if resp.status_code not in _RETRYABLE_STATUS or attempt == _RETRIES - 1:
                 raise last_err
             time.sleep(2 ** attempt)
