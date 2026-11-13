@@ -50,6 +50,10 @@ http://127.0.0.1:8000/maomaoyun?user=<email>&password=<pw>
 运行期参数问题 400, 上游网络/面板/解密失败 502。参数即各 provider 的
 `--help` 同款, 交互文档见 `http://127.0.0.1:8000/docs`。
 
+成功响应带 `Cache-Control: public, s-maxage=300`, 供部署平台 CDN(Vercel
+Edge Network / Cloudflare Workers Cache)或前置反代缓存 5 分钟; 错误响应
+一律 `no-store`, 不会被缓存。
+
 > 安全提示: token/密码随 URL 明文出现(uvicorn 日志、Clash 配置、浏览器历史),
 > 端点无鉴权, 仅限个人本机/LAN 使用, 请勿暴露公网。
 
