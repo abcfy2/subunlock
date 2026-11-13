@@ -6,7 +6,7 @@
 
 缓存: 机场内容分钟级不变, 成功响应带 `public, s-maxage` 供部署平台 CDN
 (Vercel Edge Network / Cloudflare Workers Cache)或前置反代做短缓存;
-错误响应一律 `no-store`, 防止失败详情毒化缓存窗口.
+已注册错误路径(422/400/404/502)统一 `no-store`, 防止失败详情毒化缓存窗口.
 """
 
 import sys
