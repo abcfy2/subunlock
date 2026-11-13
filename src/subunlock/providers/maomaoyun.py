@@ -1,10 +1,11 @@
 from typing import Any
 
+import yaml
 from pydantic import BaseModel, Field, SecretStr, model_validator
 
-from ..base import Provider, ProviderError
+from ..base import Provider, ProviderArgumentError, ProviderError
 from . import maomaoyun_api as api
-from .maomaoyun_api import PanelError
+from .maomaoyun_api import PanelError, PanelRejected
 from .maomaoyun_crypto import DEFAULT_AES_KEY, decrypt_payload, parse_config
 
 
@@ -51,11 +52,17 @@ class MaomaoYunProvider(Provider):
         return cls(params)
 
     def fetch(self) -> dict[str, Any]:
+        """提取完整配置. 错误翻译集中在此: 凭证被拒 → ProviderArgumentError,
+        网络/面板/codec 失败 → ProviderError; base64/AES/YAML 细节不外泄."""
         try:
             if not self.subscribe_token:
                 assert self.user and self.password  # MaomaoYunParams 已校验二选一
-                self.subscribe_token = api.login(self.user, self.password).subscribe_token
+                self.subscribe_token = api.login(self.user, self.password)
             raw, self.subscription_userinfo = api.fetch_payload(self.subscribe_token)
             return parse_config(decrypt_payload(raw, DEFAULT_AES_KEY))
-        except PanelError as e:
+        except PanelRejected as e:
+            raise ProviderArgumentError(str(e)) from e
+        except (PanelError, ValueError, yaml.YAMLError) as e:
+            # binascii.Error ⊂ ValueError(b64decode), decrypt/parse 的 ValueError
+            # 与 yaml.YAMLError 同属"上游给的 payload 坏了" → 上游失败.
             raise ProviderError(str(e)) from e

@@ -47,8 +47,8 @@ http://127.0.0.1:8000/maomaoyun?user=<email>&password=<pw>
 ```
 
 `&full=true` 等价 CLI 的 `--full`; 成功返回 `text/yaml`。参数缺失返回 422,
-运行期参数问题 400, 上游网络/面板/解密失败 502。参数即各 provider 的
-`--help` 同款, 交互文档见 `http://127.0.0.1:8000/docs`。
+参数/凭证问题(token 缺失、账密被拒) 400, 上游网络/面板/解密失败 502。
+参数即各 provider 的 `--help` 同款, 交互文档见 `http://127.0.0.1:8000/docs`。
 
 成功响应带 `Cache-Control: public, s-maxage=300`, 供部署平台 CDN 或前置
 反代缓存 5 分钟: Vercel Edge Network 直接生效; Cloudflare 需在 wrangler

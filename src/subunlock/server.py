@@ -1,8 +1,9 @@
 """REST 传输层: 把全部 provider 暴露为 HTTP 端点.
 
 端点由 PROVIDERS 注册表在导入期枚举: GET /{provider}?<params>&full=true,
-成功返回 text/yaml; 模型校验失败 422(FastAPI 默认), fetch() 运行期参数问题
-400, 上游网络/面板/解密失败 502. 参数契约见各 provider 的 params_model.
+成功返回 text/yaml; 模型校验失败 422(FastAPI 默认), 参数/凭证问题 400
+(token 缺失、账密被拒), 上游网络/面板/解密失败 502. 参数契约见各 provider
+的 params_model.
 
 缓存: 机场内容分钟级不变, 成功响应带 `public, s-maxage` 供部署平台 CDN
 (Vercel Edge Network / Cloudflare Workers Cache)或前置反代做短缓存;
@@ -13,7 +14,6 @@ import sys
 from collections.abc import Callable
 from typing import Annotated, Any
 
-import yaml
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import PROVIDERS
-from .base import Provider, ProviderArgumentError, ProviderError, to_subscription
+from .base import Provider, ProviderArgumentError, ProviderError, extract_subscription
 
 app = FastAPI(
     title="subunlock",
@@ -58,27 +58,20 @@ def _no_store_validation_error(
     )
 
 
-def _dump_yaml(data: dict[str, Any]) -> str:
-    return yaml.safe_dump(data, allow_unicode=True, sort_keys=False,
-                          default_flow_style=False, width=10000)
-
-
 def _make_endpoint(provider_cls: type[Provider]) -> Callable[..., Response]:
     params_model = provider_cls.params_model
 
     def extract(params: Any, full: bool = False) -> Response:
-        provider = provider_cls.create(params)
         try:
-            config = provider.fetch()
-            data = config if full else to_subscription(config)
+            sub = extract_subscription(provider_cls, params, full=full)
         except ProviderArgumentError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         except ProviderError as e:
             raise HTTPException(status_code=502, detail=str(e)) from e
         headers = {"Cache-Control": _CACHE_CONTROL_SUCCESS}
-        if provider.subscription_userinfo:
-            headers["subscription-userinfo"] = provider.subscription_userinfo
-        return Response(content=_dump_yaml(data), media_type="text/yaml", headers=headers)
+        if sub.subscription_userinfo:
+            headers["subscription-userinfo"] = sub.subscription_userinfo
+        return Response(content=sub.yaml_text, media_type="text/yaml", headers=headers)
 
     # 运行时注入动态参数模型, FastAPI 据此生成 Query 校验与 OpenAPI schema
     extract.__annotations__["params"] = Annotated[params_model, Query()]

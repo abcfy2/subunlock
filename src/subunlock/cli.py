@@ -2,11 +2,10 @@ import argparse
 import sys
 import time
 
-import yaml
 from pydantic import BaseModel, ValidationError
 
 from . import PROVIDERS
-from .base import ProviderArgumentError, ProviderError, to_subscription
+from .base import ProviderArgumentError, ProviderError, extract_subscription
 
 _RESERVED_SUBCOMMANDS = {"serve"}
 _COMMON_HELP = "保留完整配置(默认剥离运行时键, 只留订阅四要素)"
@@ -107,10 +106,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_usage(sys.stderr)
         print(f"{parser.prog} {args.command}: 参数错误:\n{e}", file=sys.stderr)
         return 2
-    provider = provider_cls.create(params)
     try:
-        config = provider.fetch()
-        data = config if args.full else to_subscription(config)
+        sub = extract_subscription(provider_cls, params, full=args.full)
     except ProviderArgumentError as e:
         print(f"错误: {e}", file=sys.stderr)
         print(f"用法: subunlock {args.command} --help", file=sys.stderr)
@@ -118,23 +115,17 @@ def main(argv: list[str] | None = None) -> int:
     except ProviderError as e:
         print(f"错误: {e}", file=sys.stderr)
         return 1
-    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False,
-                          default_flow_style=False, width=10000)
-    proxies = len(data.get("proxies") or [])
-    groups = len(data.get("proxy-groups") or [])
-    rules = len(data.get("rules") or [])
-    summary = f"{proxies} 节点, {groups} 策略组, {rules} 规则"
-    if args.info or args.output:
-        if args.info:
-            _print_userinfo(provider.subscription_userinfo)
-        if args.output:
-            with open(args.output, "w", encoding="utf-8") as f:
-                f.write(text)
-            print(f"OK: {summary} -> {args.output}")
-        else:
-            print(f"OK: {summary}")
-        return 0
-    sys.stdout.write(text)
+    if args.info:
+        _print_userinfo(sub.subscription_userinfo)
+    summary = f"{sub.proxies} 节点, {sub.groups} 策略组, {sub.rules} 规则"
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(sub.yaml_text)
+        print(f"OK: {summary} -> {args.output}")
+    elif args.info:
+        print(f"OK: {summary}")
+    else:
+        sys.stdout.write(sub.yaml_text)
     return 0
 
 
