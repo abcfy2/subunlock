@@ -31,7 +31,12 @@ app = FastAPI(
 )
 
 _CACHE_TTL_SECONDS = 300
-_CACHE_CONTROL_SUCCESS = f"public, s-maxage={_CACHE_TTL_SECONDS}"
+# s-maxage 给 CDN 且是 Vercel 函数 CDN 缓存的唯一开关(缺失=不缓存,每次执行函数);
+# Vercel proxy 消费掉 s-maxage 后客户端只见 max-age(浏览器忽略 s-maxage).
+# public 不写: RFC 9111 默认即可共享缓存, 其唯一作用是放行 Authorization 请求
+# 的响应, 本端点凭证在 query 永不带该头.
+_CACHE_CONTROL_SUCCESS = (f"max-age={_CACHE_TTL_SECONDS}, "
+                          f"s-maxage={_CACHE_TTL_SECONDS}")
 _CACHE_CONTROL_ERROR = "no-store"
 
 

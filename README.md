@@ -50,10 +50,11 @@ http://127.0.0.1:8000/maomaoyun?user=<email>&password=<pw>
 参数/凭证问题(token 缺失、账密被拒) 400, 上游网络/面板/解密失败 502。
 参数即各 provider 的 `--help` 同款, 交互文档见 `http://127.0.0.1:8000/docs`。
 
-成功响应带 `Cache-Control: public, s-maxage=300`, 供部署平台 CDN 或前置
-反代缓存 5 分钟: Vercel Edge Network 直接生效; Cloudflare 需在 wrangler
-配置开启 Workers Cache(`cache.enabled`)后同样生效。错误响应(422/400/404/
-502)统一 `no-store`, 不会被缓存。
+成功响应带 `Cache-Control: max-age=300, s-maxage=300`: `s-maxage` 是部署平台
+CDN 缓存的开关并给出 5 分钟 TTL(Vercel Edge Network 直接生效, proxy 会把
+s-maxage 从返回给客户端的头里剥掉; Cloudflare 需在 wrangler 配置开启 Workers
+Cache(`cache.enabled`)后同样生效), `max-age` 供浏览器本地缓存同样的 5 分钟。
+错误响应(422/400/404/502)统一 `no-store`, 不会被缓存。
 
 > 安全提示: 端点无鉴权, 仅限个人本机/LAN 使用, 请勿暴露公网。
 > 订阅 URL 自身携带凭证, 会留存于 Clash 配置与浏览器历史。
