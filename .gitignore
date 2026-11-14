@@ -1,4 +1,4 @@
-# 点开头的本地文件/目录全部忽略(.venv/.ruff_cache/.basedpyright 等)
+# 点开头的本地文件/目录全部忽略(.venv/.ruff_cache/.basedpyright/.env 等)
 .*
 !.gitignore
 !.gitattributes
@@ -17,12 +17,5 @@ build/
 *.egg-info/
 
 # 本地环境
-.env
-
-.vercel
-
-.venv-workers/
-.wrangler/
 python_modules/
 pylock.toml
-.env*
